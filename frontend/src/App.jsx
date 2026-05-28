@@ -89,24 +89,24 @@ function App() {
                                 </div>
 
                                 <div className="flex items-center gap-6">
-                                    <nav className="hidden md:flex items-center gap-2 p-1 bg-[var(--bg-base)]/50 rounded-2xl border border-[var(--glass-border)]">
+                                    <nav className="flex items-center gap-2 p-1 bg-[var(--bg-base)]/50 rounded-2xl border border-[var(--glass-border)]">
                                         <button 
                                             onClick={() => setView('dashboard')}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
+                                            className={`flex items-center gap-2 px-3 py-2 md:px-4 rounded-xl text-sm font-bold transition-all duration-300 ${
                                                 view === 'dashboard' ? 'bg-white dark:bg-slate-800 text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                             }`}
                                         >
                                             <LayoutDashboard className="w-4 h-4" />
-                                            Dashboard
+                                            <span className="hidden md:inline">Dashboard</span>
                                         </button>
                                         <button 
                                             onClick={() => setView('compare')}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
+                                            className={`flex items-center gap-2 px-3 py-2 md:px-4 rounded-xl text-sm font-bold transition-all duration-300 ${
                                                 view === 'compare' ? 'bg-white dark:bg-slate-800 text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                             }`}
                                         >
                                             <ArrowLeftRight className="w-4 h-4" />
-                                            Compare
+                                            <span className="hidden md:inline">Compare</span>
                                         </button>
                                     </nav>
 

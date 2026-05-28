@@ -13,24 +13,10 @@ app.use(helmet());
 app.use(compression());
 
 // Dynamic CORS to support localhost, Vercel deployments, and production frontends
-const allowedOrigins = [
-  'https://clearsky-ai-weld.vercel.app',
-  'http://localhost:3002',
-  'http://localhost:3000',
-  'http://localhost:5173'
-];
-if (env.FRONTEND_URL) allowedOrigins.push(env.FRONTEND_URL);
-if (env.AI_SERVICE_URL) allowedOrigins.push(env.AI_SERVICE_URL);
-
 app.use(cors({ 
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS blocked: Origin not allowed'), false);
-  },
-  credentials: true 
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 

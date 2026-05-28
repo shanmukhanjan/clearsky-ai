@@ -128,9 +128,9 @@ const Dashboard = ({ defaultCity }) => {
                     </h1>
                 </div>
 
-                <div className="flex gap-4 items-center">
+                <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
 
-                    <div className="w-[380px]">
+                    <div className="w-full md:w-[380px]">
                         <SearchAutocomplete
                             onSelect={loadCity}
                             defaultValue={searchInput}
@@ -142,7 +142,7 @@ const Dashboard = ({ defaultCity }) => {
                     <button
                         onClick={() => loadCity(searchInput)}
                         disabled={loading}
-                        className="p-4 rounded-2xl bg-[#111827] border border-white/10 text-white hover:bg-[#1f2937] transition-all"
+                        className="w-full md:w-auto p-4 flex items-center justify-center rounded-2xl bg-[#111827] border border-white/10 text-white hover:bg-[#1f2937] transition-all"
                     >
                         <RefreshCw
                             className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
@@ -236,7 +236,7 @@ const Dashboard = ({ defaultCity }) => {
 
                         </div>
 
-                        <div className="lg:col-span-7 h-[450px] rounded-[2rem] overflow-hidden border border-white/10">
+                        <div className="lg:col-span-7 h-[350px] md:h-[450px] rounded-[2rem] overflow-hidden border border-white/10">
 
                             <AQIMap
                                 data={data}
