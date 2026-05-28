@@ -4,8 +4,18 @@ import axios from 'axios';
 const isProd = import.meta.env.PROD;
 
 // In production, force the HTTPS Render URL if VITE_API_URL isn't set.
-// In local dev, default to localhost:5001.
-const baseURL = import.meta.env.VITE_API_URL || (isProd ? 'https://clearsky-backend.onrender.com' : 'http://localhost:5001');
+let rawBaseURL = import.meta.env.VITE_API_URL || (isProd ? 'https://clearsky-backend.onrender.com' : 'http://localhost:5001');
+
+// Clean up user-provided URL to prevent double /api/api
+// (If user enters https://backend.com/api or https://backend.com/)
+if (rawBaseURL.endsWith('/')) {
+    rawBaseURL = rawBaseURL.slice(0, -1);
+}
+if (rawBaseURL.endsWith('/api')) {
+    rawBaseURL = rawBaseURL.slice(0, -4);
+}
+
+export const baseURL = rawBaseURL;
 
 const api = axios.create({
     baseURL,
