@@ -3,12 +3,12 @@ import { RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import AQICard from '../components/AQICard';
+
 import AQIChart from '../components/AQIChart';
 import PollutantPanel from '../components/PollutantPanel';
 import HealthCard from '../components/HealthCard';
 import AQIMap from '../components/AQIMap';
 import SearchAutocomplete from '../components/SearchAutocomplete';
-import AQI3DScene from '../components/AQI3DScene';
 
 import { fetchAQIData } from '../api/aqi';
 
@@ -115,11 +115,8 @@ const Dashboard = ({ defaultCity }) => {
     }, [defaultCity, loadCity]);
 
     return (
-        <>
-            {/* 3D Scene Background */}
-            <AQI3DScene aqi={data?.currentAQI} isDarkMode={true} />
-            
-            <div className="max-w-7xl mx-auto px-6 py-6 space-y-10 relative z-10">
+
+        <div className="max-w-7xl mx-auto px-6 py-6 space-y-10">
 
             {/* HEADER */}
 
@@ -305,7 +302,6 @@ const Dashboard = ({ defaultCity }) => {
             )}
 
         </div>
-        </>
 
     );
 

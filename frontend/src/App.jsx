@@ -46,8 +46,12 @@ function App() {
 
     return (
         <div className="min-h-screen flex flex-col relative z-0">
-            {/* Cinematic Background Engine is now 3D and handled by Dashboard */}
-            <div className="fixed inset-0 z-[-1] bg-[var(--bg-base)] transition-colors duration-700"></div>
+            {/* Cinematic Background Engine */}
+            <div className="cinematic-bg">
+                <div className="orb orb-1"></div>
+                <div className="orb orb-2"></div>
+                <div className="orb orb-3"></div>
+            </div>
 
             <AnimatePresence mode="wait">
                 {view === 'welcome' ? (
