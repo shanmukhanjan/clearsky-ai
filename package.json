@@ -1,0 +1,13 @@
+{
+  "name": "clear-sky-predictor",
+  "version": "1.0.0",
+  "description": "AI-Driven Urban Air Quality Forecaster",
+  "scripts": {
+    "install-all": "cd backend && npm install && cd ../frontend && npm install",
+    "start-backend": "cd backend && npm start",
+    "start-frontend": "cd frontend && npm start"
+  },
+  "dependencies": {
+    "gcharts": "^1.0.0"
+  }
+}
