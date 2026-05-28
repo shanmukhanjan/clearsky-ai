@@ -25,9 +25,13 @@ export async function fetchAQIData(city) {
         return response.data;
 
     } catch (error) {
-
         console.error('AQI API ERROR:', error);
-
+        
+        // Use our intercepted custom message if available
+        if (error.customMessage) {
+            throw new Error(error.customMessage);
+        }
+        
         throw error;
     }
 }
@@ -55,10 +59,13 @@ export async function searchLocations(query) {
         return response.data;
 
     } catch (error) {
-
-        console.error(error);
-
-        return [];
+        console.error('SEARCH API ERROR:', error);
+        
+        if (error.customMessage) {
+            throw new Error(error.customMessage);
+        }
+        
+        throw error;
     }
 }
 
@@ -82,8 +89,11 @@ export async function compareCities(city1, city2) {
         return response.data;
 
     } catch (error) {
-
-        console.error(error);
+        console.error('COMPARE API ERROR:', error);
+        
+        if (error.customMessage) {
+            throw new Error(error.customMessage);
+        }
 
         throw error;
     }
