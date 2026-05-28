@@ -29,7 +29,7 @@ app.use('/api/aqi', aqiRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-    res.json({ status: 'OK', uptime: process.uptime() });
+    res.json({ status: 'ok', uptime: process.uptime() });
 });
 
 // 404 Handler
