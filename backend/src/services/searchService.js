@@ -1,85 +1,84 @@
 /**
- * Search Service — Location Autocomplete via OpenWeather Geo API
+ * Search Service — Location Autocomplete via Nominatim
  * 
- * Provides highly accurate global city search suggestions.
+ * Provides city search suggestions using OpenStreetMap Nominatim API (free, no key).
  */
 
 const axios = require('axios');
-const env = require('../config/env');
+
+const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 
 /**
  * Search for locations matching a query string.
- * Returns suggestions with city, state, country, lat, lon.
+ * Returns up to 5 suggestions with city, state, country, lat, lon.
  */
 async function searchLocations(query) {
     if (!query || query.trim().length < 2) return [];
 
-    if (!env.OPENWEATHER_API_KEY) {
-        throw new Error("OPENWEATHER_API_KEY is missing in env variables.");
-    }
+    const url = `${NOMINATIM_BASE}/search`;
+    const res = await axios.get(url, {
+        params: {
+            q: query.trim(),
+            format: 'json',
+            limit: 10,
+            addressdetails: 1,
+            'accept-language': 'en',
+            featuretype: 'settlement',
+        },
+        headers: { 'User-Agent': 'ClearSkyAI/2.0 (clearsky@example.com)' },
+        timeout: 8000,
+    });
 
-    const url = `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(query.trim())}&limit=5&appid=${env.OPENWEATHER_API_KEY}`;
-    
-    try {
-        const res = await axios.get(url, { timeout: 8000 });
-        
-        const results = res.data.map(item => ({
-            displayName: `${item.name}${item.state ? ', ' + item.state : ''}, ${item.country}`,
-            city: item.name,
-            state: item.state || null,
-            country: item.country,
-            countryCode: item.country,
+    const seen = new Set();
+    const results = [];
+
+    for (const item of res.data) {
+        const addr = item.address || {};
+        const cityName = addr.city || addr.town || addr.village || addr.suburb
+            || addr.county || addr.municipality || addr.district
+            || addr.state || item.name || query;
+        const country = addr.country || '';
+        const state = addr.state || null;
+
+        // Build a dedup key from city + country
+        const dedupKey = `${cityName.toLowerCase()}|${country.toLowerCase()}`;
+        if (seen.has(dedupKey)) continue;
+        seen.add(dedupKey);
+
+        results.push({
+            displayName: item.display_name,
+            city: cityName,
+            state,
+            country: country || null,
+            countryCode: addr.country_code || null,
             lat: parseFloat(item.lat),
             lon: parseFloat(item.lon),
-        }));
+        });
 
-        // Deduplicate
-        const seen = new Set();
-        const deduped = [];
-        for (const item of results) {
-            const key = `${item.city}|${item.country}|${item.state || ''}`;
-            if (!seen.has(key)) {
-                seen.add(key);
-                deduped.push(item);
-            }
-        }
-
-        return deduped;
-    } catch (error) {
-        console.error("Search API Error:", error.message);
-        return [];
+        if (results.length >= 6) break;
     }
+
+    return results;
 }
 
 /**
- * Reverse geocode coordinates to a city name using OpenWeather Geo API.
+ * Reverse geocode coordinates to a city name.
  */
 async function reverseGeocode(lat, lon) {
-    if (!env.OPENWEATHER_API_KEY) {
-        throw new Error("OPENWEATHER_API_KEY is missing in env variables.");
-    }
-
-    const url = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${env.OPENWEATHER_API_KEY}`;
-    
-    try {
-        const res = await axios.get(url, { timeout: 5000 });
-        const data = res.data[0];
-        
-        if (!data) {
-            return { city: 'Unknown Location', state: null, country: null, lat, lon };
-        }
-
-        return {
-            city: data.name,
-            state: data.state || null,
-            country: data.country || null,
-            lat: parseFloat(data.lat),
-            lon: parseFloat(data.lon),
-        };
-    } catch (error) {
-        console.error("Reverse Geocode Error:", error.message);
-        return { city: 'Unknown Location', state: null, country: null, lat, lon };
-    }
+    const url = `${NOMINATIM_BASE}/reverse`;
+    const res = await axios.get(url, {
+        params: { lat, lon, format: 'json', 'accept-language': 'en' },
+        headers: { 'User-Agent': 'ClearSkyAI/2.0' },
+        timeout: 5000,
+    });
+    const addr = res.data?.address || {};
+    return {
+        city: addr.city || addr.town || addr.village || addr.county || 'Unknown',
+        state: addr.state || null,
+        country: addr.country || null,
+        lat: parseFloat(res.data.lat),
+        lon: parseFloat(res.data.lon),
+    };
 }
 
 module.exports = { searchLocations, reverseGeocode };

@@ -1,171 +1,184 @@
 """
-ClearSky AI - Global AQI Predictor
-
-Loads the pre-trained global XGBoost models and provides inference
-based on real-time features including latitude and longitude.
+ClearSky AI - Global AQI Predictor & Explainer
+Loads the pre-trained point and quantile models to provide inference,
+confidence intervals, and SHAP-based explainability.
 """
 
 import os
 import numpy as np
-import xgboost as xgb
 import pandas as pd
+import joblib
+import shap
 
 MODEL_DIR = os.path.dirname(__file__)
 
 class AQIPredictor:
     def __init__(self):
-        self.model_24h = None
-        self.model_48h = None
-        self.model_72h = None
+        self.models = {}
+        self.quantiles = {}
+        self.explainer = None
         self.model_loaded = False
         
-        # Must match trainer features exactly
-        self.features = [
-            "latitude", "longitude",
-            "pm25", "pm10", "no2", "so2", "o3", "co",
-            "temperature", "humidity", "wind_speed", "wind_direction",
-            "pressure", "precipitation", "uv_index",
-            "hour", "weekday", "month", "season",
-            "pm25_rolling_6h", "pm25_rolling_24h", "temp_rolling_6h",
-            "low_wind_flag", "high_humidity_flag", "smog_risk_flag"
-        ]
-        
-        # CPCB India NAQI Breakpoints
-        self.breakpoints = {
-            "pm25": [(0,30,0,50), (30.1,60,51,100), (60.1,90,101,200), (90.1,120,201,300), (120.1,250,301,400), (250.1,500,401,500)],
-            "pm10": [(0,50,0,50), (51,100,51,100), (101,250,101,200), (251,350,201,300), (351,430,301,400), (430.1,600,401,500)],
-            "no2": [(0,40,0,50), (41,80,51,100), (81,180,101,200), (181,280,201,300), (281,400,301,400), (400.1,800,401,500)],
-            "so2": [(0,40,0,50), (41,80,51,100), (81,380,101,200), (381,800,201,300), (801,1600,301,400), (1600.1,3200,401,500)],
-            "co": [(0,1,0,50), (1.1,2,51,100), (2.1,10,101,200), (10.1,17,201,300), (17.1,34,301,400), (34.1,68,401,500)],
-            "o3": [(0,50,0,50), (51,100,51,100), (101,168,101,200), (169,208,201,300), (209,748,301,400), (748.1,1500,401,500)],
-            "nh3": [(0,200,0,50), (201,400,51,100), (401,800,101,200), (801,1200,201,300), (1201,1800,301,400), (1800.1,3600,401,500)]
-        }
+        # Load meta to get features list
+        meta_path = os.path.join(MODEL_DIR, "model_meta.json")
+        if os.path.exists(meta_path):
+            import json
+            with open(meta_path, "r") as f:
+                self.meta = json.load(f)
+            self.features = self.meta.get("features", [])
+        else:
+            self.features = []
 
         self._load_models()
 
     def _load_models(self):
         try:
-            m24 = os.path.join(MODEL_DIR, "global_xgb_24h.json")
-            m48 = os.path.join(MODEL_DIR, "global_xgb_48h.json")
-            m72 = os.path.join(MODEL_DIR, "global_xgb_72h.json")
+            for h in ["24h", "48h", "72h"]:
+                m_path = os.path.join(MODEL_DIR, f"model_{h}.pkl")
+                l_path = os.path.join(MODEL_DIR, f"model_{h}_lower.pkl")
+                u_path = os.path.join(MODEL_DIR, f"model_{h}_upper.pkl")
 
-            if os.path.exists(m24) and os.path.exists(m48) and os.path.exists(m72):
-                self.model_24h = xgb.Booster()
-                self.model_24h.load_model(m24)
-                
-                self.model_48h = xgb.Booster()
-                self.model_48h.load_model(m48)
-                
-                self.model_72h = xgb.Booster()
-                self.model_72h.load_model(m72)
-                
+                if os.path.exists(m_path):
+                    self.models[h] = joblib.load(m_path)
+                    
+                    if os.path.exists(l_path) and os.path.exists(u_path):
+                        self.quantiles[h] = {
+                            "lower": joblib.load(l_path),
+                            "upper": joblib.load(u_path)
+                        }
+
+            if "24h" in self.models:
                 self.model_loaded = True
-                print("OK: Global XGBoost models loaded successfully.")
+                
+                # Setup SHAP explainer for 24h model
+                model_24 = self.models["24h"]
+                try:
+                    # Try TreeExplainer for XGBoost/LightGBM/RF
+                    self.explainer = shap.TreeExplainer(model_24)
+                except:
+                    self.explainer = None
+                    
+                print("OK: Point and Quantile models loaded successfully.")
             else:
-                print("WARN: Global XGBoost models not found. Will use heuristic fallback.")
+                print("WARN: Models not found. Using heuristic fallback.")
                 self.model_loaded = False
         except Exception as e:
-            print(f"ERR: Error loading global models: {e}")
+            print(f"ERR: Error loading models: {e}")
+            import traceback
+            traceback.print_exc()
             self.model_loaded = False
 
     def predict(self, current_aqi: float, features_dict: dict) -> dict:
-        """
-        Returns AQI prediction.
-        features_dict must contain all keys in self.features.
-        """
-        for f in self.features:
-            if f not in features_dict:
-                features_dict[f] = 0.0
-
         if self.model_loaded:
             df = pd.DataFrame([features_dict])
-            df = df[self.features]
-            dmatrix = xgb.DMatrix(df)
             
-            # 1. Predict PM2.5 Concentrations
-            pm25_24 = float(self.model_24h.predict(dmatrix)[0])
-            pm25_48 = float(self.model_48h.predict(dmatrix)[0])
-            pm25_72 = float(self.model_72h.predict(dmatrix)[0])
-        else:
-            pm25_base = features_dict.get("pm25", current_aqi)
-            wind = features_dict.get("wind_speed", 10)
-            factor = 1.15 if wind < 2 else (0.85 if wind > 15 else 1.0)
-            pm25_24 = pm25_base * factor
-            pm25_48 = (pm25_24 + pm25_base) / 2
-            pm25_72 = pm25_48 * 0.95
+            # Ensure features match EXACTLY
+            for f in self.features:
+                if f not in df.columns:
+                    df[f] = 0.0
+            df = df[self.features]
 
-        # 2. Derive other pollutant concentrations based on PM2.5 and meteorological factors
-        # In a full enterprise system, each pollutant would have its own XGBoost model.
-        # Here we use historical ratios combined with current weather context.
-        def derive_pollutants(pm25_pred):
-            pm10_pred = pm25_pred * 2.1  # PM10 is usually ~2x PM2.5 in dusty regions
-            no2_pred = pm25_pred * 0.6
-            so2_pred = pm25_pred * 0.2
-            co_pred = pm25_pred * 0.05 # CO is measured in mg/m3
-            o3_pred = features_dict.get("o3", 30) # Ozone correlates more with sunlight (UV) than PM2.5
-            if features_dict.get("uv_index", 0) > 5:
-                o3_pred *= 1.2
-            nh3_pred = pm25_pred * 0.1
+            res = {}
+            for h in ["24h", "48h", "72h"]:
+                if h in self.models:
+                    # The models predict PM2.5, we need to convert to AQI
+                    pm25_pred = float(self.models[h].predict(df)[0])
+                    res[h] = self._pm25_to_aqi(pm25_pred)
+                    
+                    if h in self.quantiles:
+                        p_lower = float(self.quantiles[h]["lower"].predict(df)[0])
+                        p_upper = float(self.quantiles[h]["upper"].predict(df)[0])
+                        res[f"{h}_lower"] = self._pm25_to_aqi(p_lower)
+                        res[f"{h}_upper"] = self._pm25_to_aqi(p_upper)
+                    else:
+                        res[f"{h}_lower"] = max(0, res[h] * 0.8)
+                        res[f"{h}_upper"] = res[h] * 1.2
+                else:
+                    res[h] = current_aqi
+                    res[f"{h}_lower"] = current_aqi
+                    res[f"{h}_upper"] = current_aqi
+
+            # Calculate mathematically derived confidence score for 24h
+            # Narrower interval = higher confidence
+            aqi_24 = res["24h"]
+            width = res["24h_upper"] - res["24h_lower"]
+            
+            if aqi_24 <= 0:
+                conf = 100
+            else:
+                # 0 width = 100%. Width = 100% of value = 0% confidence
+                ratio = width / max(1, aqi_24)
+                conf = max(0, min(100, int((1.0 - ratio) * 100)))
+                
+            trend = "Rising" if aqi_24 > current_aqi * 1.05 else "Improving" if aqi_24 < current_aqi * 0.95 else "Stable"
+
             return {
-                "pm25": pm25_pred, "pm10": pm10_pred, "no2": no2_pred,
-                "so2": so2_pred, "co": co_pred, "o3": o3_pred, "nh3": nh3_pred
+                "next6Hours": int(current_aqi + (aqi_24 - current_aqi) * 0.25),
+                "next12Hours": int(current_aqi + (aqi_24 - current_aqi) * 0.5),
+                "next24Hours": aqi_24,
+                "next48Hours": res["48h"],
+                "next72Hours": res["72h"],
+                "bounds24h": [res["24h_lower"], res["24h_upper"]],
+                "bounds48h": [res["48h_lower"], res["48h_upper"]],
+                "bounds72h": [res["72h_lower"], res["72h_upper"]],
+                "trend": trend,
+                "confidenceScore": conf,
+                "model": "Ensemble ML (Optuna Tuned)"
             }
-
-        concs_24 = derive_pollutants(pm25_24)
-        concs_48 = derive_pollutants(pm25_48)
-        concs_72 = derive_pollutants(pm25_72)
-
-        # 3. Compute exact CPCB NAQI for each timeframe
-        next24 = self._compute_final_aqi(concs_24)
-        next48 = self._compute_final_aqi(concs_48)
-        next72 = self._compute_final_aqi(concs_72)
-
-        # Safety Validation to avoid unrealistic jumps
-        def safe_val(v, fallback):
-            if v is None or np.isnan(v) or v < 0: return fallback
-            max_allowed = fallback + 150
-            min_allowed = max(0, fallback - 150)
-            return max(0, min(500, int(max(min_allowed, min(max_allowed, v)))))
-
-        next24 = safe_val(next24, current_aqi)
-        next48 = safe_val(next48, next24)
-        next72 = safe_val(next72, next48)
-
-        trend = "Rising" if next24 > current_aqi * 1.05 else "Improving" if next24 < current_aqi * 0.95 else "Stable"
+        else:
+            return self._heuristic_fallback(current_aqi, features_dict)
+            
+    def explain(self, features_dict: dict) -> dict:
+        """Returns SHAP feature importances for a single prediction."""
+        if not self.model_loaded or self.explainer is None:
+            return {"error": "Explainer not available. Train models first."}
+            
+        df = pd.DataFrame([features_dict])
+        for f in self.features:
+            if f not in df.columns: df[f] = 0.0
+        df = df[self.features]
         
-        confidence = "High"
-        wind = features_dict.get("wind_speed", 10)
-        if not self.model_loaded or wind == 0:
-            confidence = "Medium"
-        if wind > 30 or current_aqi > 400:
-            confidence = "Low"
-
+        shap_values = self.explainer.shap_values(df)
+        
+        # If it's a list (multiclass or similar), take the first class
+        if isinstance(shap_values, list):
+            shap_values = shap_values[0]
+            
+        contributions = dict(zip(self.features, shap_values[0]))
+        # Sort by absolute magnitude
+        sorted_contributions = sorted(contributions.items(), key=lambda x: abs(x[1]), reverse=True)
+        
         return {
-            "next6Hours": int(current_aqi + (next24 - current_aqi) * 0.25),
-            "next12Hours": int(current_aqi + (next24 - current_aqi) * 0.5),
-            "next24Hours": next24,
-            "next48Hours": next48,
-            "next72Hours": next72,
-            "trend": trend,
-            "confidence": confidence,
-            "model": "Global XGBoost (Multi-Pollutant NAQI)" if self.model_loaded else "Heuristic Fallback (NAQI)"
+            "top_features": [
+                {"feature": k, "impact": float(v)} for k, v in sorted_contributions[:10]
+            ],
+            "base_value": float(self.explainer.expected_value[0] if isinstance(self.explainer.expected_value, (list, np.ndarray)) else self.explainer.expected_value)
         }
 
-    def _compute_final_aqi(self, concentrations: dict) -> int:
-        """Calculates final AQI as the max of all pollutant sub-indices according to CPCB formula."""
-        indices = []
-        for pol, val in concentrations.items():
-            if val is None or np.isnan(val) or val < 0: continue
-            bp_list = self.breakpoints.get(pol, [])
-            sub_index = 0
-            for (blo, bhi, ilo, ihi) in bp_list:
-                if blo <= val <= bhi:
-                    sub_index = ((ihi - ilo) / (bhi - blo)) * (val - blo) + ilo
-                    break
-                elif val > bp_list[-1][1]:
-                    # Exceeds max breakpoint
-                    sub_index = ((bp_list[-1][3] - bp_list[-1][2]) / (bp_list[-1][1] - bp_list[-1][0])) * (val - bp_list[-1][0]) + bp_list[-1][2]
-            indices.append(sub_index)
-        
-        if not indices: return 0
-        return int(max(indices))
+    def _heuristic_fallback(self, current_aqi, features_dict):
+        pm25 = features_dict.get("pm25", current_aqi)
+        if pm25 is None or np.isnan(pm25): pm25 = current_aqi
+        wind = features_dict.get("wind_speed", 10)
+        factor = 1.1 if wind < 2 else 0.9 if wind > 15 else 1.0
+        n24 = max(0, min(500, int(pm25 * factor)))
+        return {
+            "next6Hours": current_aqi, "next12Hours": current_aqi,
+            "next24Hours": n24, "next48Hours": max(0, int(n24 * 0.95)),
+            "next72Hours": max(0, int(n24 * 0.9)),
+            "bounds24h": [max(0, int(n24 * 0.8)), int(n24 * 1.2)],
+            "bounds48h": [max(0, int(n24 * 0.7)), int(n24 * 1.3)],
+            "bounds72h": [max(0, int(n24 * 0.6)), int(n24 * 1.4)],
+            "trend": "Rising" if n24 > pm25 else "Improving",
+            "confidenceScore": 30,
+            "model": "Heuristic Fallback"
+        }
+
+    def _pm25_to_aqi(self, pm25: float) -> int:
+        if pm25 is None or np.isnan(pm25) or pm25 < 0: return 0
+        if pm25 <= 12.0: return int((50/12.0) * pm25)
+        elif pm25 <= 35.4: return int(((100-51)/(35.4-12.1)) * (pm25-12.1) + 51)
+        elif pm25 <= 55.4: return int(((150-101)/(55.4-35.5)) * (pm25-35.5) + 101)
+        elif pm25 <= 150.4: return int(((200-151)/(150.4-55.5)) * (pm25-55.5) + 151)
+        elif pm25 <= 250.4: return int(((300-201)/(250.4-150.5)) * (pm25-150.5) + 201)
+        elif pm25 <= 350.4: return int(((400-301)/(350.4-250.5)) * (pm25-250.5) + 301)
+        else: return int(((500-401)/(500.4-350.5)) * (pm25-350.5) + 401)

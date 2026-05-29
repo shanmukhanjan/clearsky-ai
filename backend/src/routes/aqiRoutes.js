@@ -1,51 +1,14 @@
 const express = require('express');
-
 const router = express.Router();
+const aqiController = require('../controllers/aqiController');
 
-const aqiController =
-    require('../controllers/aqiController');
+// Search autocomplete — must be BEFORE the /:city route
+router.get('/search', aqiController.searchLocations);
 
-/**
- * Search locations
- */
-router.get(
-    '/search',
-    aqiController.searchLocations
-);
+// Compare cities
+router.get('/compare', aqiController.compareCities);
 
-/**
- * Compare cities
- */
-router.get(
-    '/compare',
-    aqiController.compareCities
-);
-
-/**
- * IMPORTANT FIX:
- * Use wildcard route for coordinates
- */
-router.get(
-    '/*/predict',
-    (req, res, next) => {
-
-        try {
-
-            const fullPath =
-                req.params[0];
-
-            req.params.city =
-                decodeURIComponent(fullPath);
-
-            next();
-
-        } catch (err) {
-
-            next(err);
-        }
-
-    },
-    aqiController.getAQIPrediction
-);
+// GET /api/aqi/:city/predict
+router.get('/:city/predict', aqiController.getAQIPrediction);
 
 module.exports = router;

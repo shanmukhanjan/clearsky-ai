@@ -5,21 +5,11 @@ const HealthCard = ({ health, category }) => {
     if (!health) return null;
 
     const isGood = category === 'Good';
-    const isSatisfactory = category === 'Satisfactory';
     const isModerate = category === 'Moderate';
     const isPoor = category === 'Poor';
-    const isVeryPoor = category === 'Very Poor';
-    const isSevere = category === 'Severe';
     
-    let accentColor = 'bg-blue-500';
-    let shadowColor = 'shadow-[0_0_30px_rgba(59,130,246,0.1)]';
-
-    if (isGood) { accentColor = 'bg-[#00B050]'; shadowColor = 'shadow-[0_0_30px_rgba(0,176,80,0.1)]'; }
-    else if (isSatisfactory) { accentColor = 'bg-[#92D050]'; shadowColor = 'shadow-[0_0_30px_rgba(146,208,80,0.1)]'; }
-    else if (isModerate) { accentColor = 'bg-[#FFFF00]'; shadowColor = 'shadow-[0_0_30px_rgba(255,255,0,0.1)]'; }
-    else if (isPoor) { accentColor = 'bg-[#FF9900]'; shadowColor = 'shadow-[0_0_30px_rgba(255,153,0,0.1)]'; }
-    else if (isVeryPoor) { accentColor = 'bg-[#FF0000]'; shadowColor = 'shadow-[0_0_30px_rgba(255,0,0,0.1)]'; }
-    else if (isSevere) { accentColor = 'bg-[#C00000]'; shadowColor = 'shadow-[0_0_30px_rgba(192,0,0,0.1)]'; }
+    const accentColor = isGood ? 'bg-green-500' : isModerate ? 'bg-yellow-500' : isPoor ? 'bg-orange-500' : 'bg-red-500';
+    const shadowColor = isGood ? 'shadow-[0_0_30px_rgba(34,197,94,0.1)]' : isModerate ? 'shadow-[0_0_30px_rgba(234,179,8,0.1)]' : isPoor ? 'shadow-[0_0_30px_rgba(249,115,22,0.1)]' : 'shadow-[0_0_30px_rgba(239,68,68,0.1)]';
 
     return (
         <div className={`glass-card p-8 flex flex-col h-full relative overflow-hidden ${shadowColor} transition-all duration-700 hover:shadow-xl rounded-[2rem]`}>
@@ -46,17 +36,15 @@ const HealthCard = ({ health, category }) => {
                 <div className="flex flex-col gap-4">
                     <div className="flex items-start gap-4 p-4 bg-[var(--bg-base)]/20 border border-transparent hover:border-[var(--glass-border)] rounded-2xl transition-all duration-300">
                         <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm font-semibold text-[var(--text-secondary)] leading-snug">
-                            {health.action || (isGood ? 'Outdoor activity is ideal.' : 'Outdoor activity is permissible with caution.')}
-                        </span>
+                        <span className="text-sm font-semibold text-[var(--text-secondary)] leading-snug">Outdoor activity is {isGood ? 'ideal' : 'permissible with caution'}.</span>
                     </div>
                     <div className="flex items-start gap-4 p-4 bg-[var(--bg-base)]/20 border border-transparent hover:border-[var(--glass-border)] rounded-2xl transition-all duration-300">
                         <ShieldCheck className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm font-semibold text-[var(--text-secondary)] leading-snug">Mask usage recommended for sensitive groups in moderate to severe conditions.</span>
+                        <span className="text-sm font-semibold text-[var(--text-secondary)] leading-snug">Mask usage recommended for sensitive groups.</span>
                     </div>
                     <div className="flex items-start gap-4 p-4 bg-[var(--bg-base)]/20 border border-transparent hover:border-[var(--glass-border)] rounded-2xl transition-all duration-300">
                         <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm font-semibold text-[var(--text-secondary)] leading-snug">Consider air filtration indoors if AQI rises above Satisfactory.</span>
+                        <span className="text-sm font-semibold text-[var(--text-secondary)] leading-snug">Consider air filtration indoors if AQI rises.</span>
                     </div>
                 </div>
             </div>

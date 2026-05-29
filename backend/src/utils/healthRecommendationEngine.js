@@ -1,53 +1,62 @@
 /**
  * Health Recommendation Engine
- * Provides health advice based on CPCB India NAQI categories
+ * Maps AQI category labels to actionable public health guidance.
+ * Based on US EPA and WHO recommendations.
  */
 
-function getHealthRecommendation(category) {
-    switch (category) {
-        case 'Good':
-            return {
-                level: 'Good',
-                recommendation: 'Air quality is considered satisfactory, and air pollution poses little or no risk.',
-                action: 'Enjoy your normal outdoor activities.'
-            };
-        case 'Satisfactory':
-            return {
-                level: 'Satisfactory',
-                recommendation: 'Air quality is acceptable. Minor breathing discomfort to sensitive people.',
-                action: 'Unusually sensitive people should consider reducing prolonged or heavy exertion.'
-            };
-        case 'Moderate':
-            return {
-                level: 'Moderate',
-                recommendation: 'Breathing discomfort to the people with lungs, asthma and heart diseases.',
-                action: 'Active children and adults, and people with respiratory disease, such as asthma, should limit prolonged outdoor exertion.'
-            };
-        case 'Poor':
-            return {
-                level: 'Poor',
-                recommendation: 'Breathing discomfort to most people on prolonged exposure.',
-                action: 'Everyone should reduce prolonged or heavy exertion. Mask usage recommended.'
-            };
-        case 'Very Poor':
-            return {
-                level: 'Very Poor',
-                recommendation: 'Respiratory illness on prolonged exposure. May affect healthy people.',
-                action: 'Avoid prolonged outdoor activities. Use N95 masks when outside.'
-            };
-        case 'Severe':
-            return {
-                level: 'Severe',
-                recommendation: 'Health warning of emergency conditions. The entire population is more likely to be affected.',
-                action: 'Stay indoors and keep activity levels low. Use air purifiers.'
-            };
-        default:
-            return {
-                level: 'Unknown',
-                recommendation: 'Data unavailable',
-                action: 'No specific guidance'
-            };
-    }
+const RECOMMENDATIONS = {
+    'Good': {
+        general: 'Air quality is satisfactory. Outdoor activities are safe for everyone.',
+        sensitive: 'No special precautions needed.',
+        outdoor: 'Ideal conditions for outdoor exercise.',
+        indoor: 'Natural ventilation is fine. No air purifier needed.',
+        mask: false,
+        icon: '✅',
+    },
+    'Moderate': {
+        general: 'Air quality is acceptable. Unusually sensitive individuals may experience minor symptoms.',
+        sensitive: 'Unusually sensitive people should consider reducing prolonged outdoor exertion.',
+        outdoor: 'Most people can continue outdoor activities normally.',
+        indoor: 'Good ventilation recommended. Air purifier optional.',
+        mask: false,
+        icon: '🟡',
+    },
+    'Unhealthy for Sensitive Groups': {
+        general: 'Members of sensitive groups may experience health effects.',
+        sensitive: 'People with respiratory or heart conditions, children, and elderly should limit prolonged outdoor exertion.',
+        outdoor: 'General public can still be outdoors. Reduce intensity of prolonged activity.',
+        indoor: 'Keep indoor air clean. Consider air purifier if sensitive.',
+        mask: false,
+        icon: '🟠',
+    },
+    'Unhealthy': {
+        general: 'Everyone may begin to experience health effects. Sensitive groups are at higher risk.',
+        sensitive: 'Avoid prolonged outdoor exertion. Stay indoors if possible.',
+        outdoor: 'Wear an N95/KN95 mask outdoors. Limit time outside.',
+        indoor: 'Keep windows closed. Run HEPA air purifier.',
+        mask: true,
+        icon: '🔴',
+    },
+    'Very Unhealthy': {
+        general: 'Health alert: everyone may experience serious health effects.',
+        sensitive: 'Remain indoors. Avoid all outdoor physical activity.',
+        outdoor: 'Wear N95 mask if you must go outside. Minimize time outdoors.',
+        indoor: 'Seal gaps in windows and doors. Use air purifier continuously.',
+        mask: true,
+        icon: '🟣',
+    },
+    'Hazardous': {
+        general: 'Emergency conditions. Entire population is likely to be affected.',
+        sensitive: 'Stay indoors. Seek medical advice if experiencing symptoms.',
+        outdoor: 'Do not go outside. If unavoidable, use full respiratory protection.',
+        indoor: 'Create a clean air shelter. Run air purifier at highest setting.',
+        mask: true,
+        icon: '🟤',
+    },
+};
+
+function getHealthRecommendation(categoryLabel) {
+    return RECOMMENDATIONS[categoryLabel] || RECOMMENDATIONS['Moderate'];
 }
 
 module.exports = { getHealthRecommendation };

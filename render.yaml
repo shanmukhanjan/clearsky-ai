@@ -1,30 +1,29 @@
 services:
-  # Backend Node.js Service
+  # AI Service (FastAPI)
+  - type: web
+    name: clearsky-ai-service
+    runtime: python
+    buildCommand: "./render-build.sh"
+    startCommand: "uvicorn app:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+
+  # Backend (Node.js/Express)
   - type: web
     name: clearsky-backend
-    env: node
-    rootDir: backend
-    buildCommand: npm install
-    startCommand: npm start
+    runtime: node
+    buildCommand: "npm install"
+    startCommand: "npm start"
     envVars:
-      - key: PORT
-        value: 10000
-      - key: NODE_ENV
-        value: production
-      - key: WAQI_API_KEY
-        sync: false
       - key: OPENWEATHER_API_KEY
         sync: false
       - key: AI_SERVICE_URL
-        value: https://clearsky-ai-service.onrender.com
-
-  # AI Python Service
-  - type: web
-    name: clearsky-ai-service
-    env: python
-    rootDir: ai-service
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
-    envVars:
-      - key: PORT
-        value: 10000
+        fromService:
+          name: clearsky-ai-service
+          type: web
+          property: host
+      - key: FRONTEND_URL
+        sync: false

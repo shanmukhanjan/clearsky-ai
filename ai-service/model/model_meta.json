@@ -1,0 +1,69 @@
+{
+  "features": [
+    "latitude",
+    "longitude",
+    "pm25",
+    "pm10",
+    "co",
+    "no2",
+    "so2",
+    "o3",
+    "temperature",
+    "humidity",
+    "wind_speed",
+    "wind_direction",
+    "pressure",
+    "precipitation",
+    "uv_index",
+    "hour",
+    "weekday",
+    "month",
+    "season",
+    "is_weekend",
+    "hour_sin",
+    "hour_cos",
+    "lat_lon_interaction",
+    "pm25_rolling_6h",
+    "pm25_rolling_12h",
+    "pm25_rolling_24h",
+    "pm25_std_24h",
+    "aqi_momentum",
+    "aqi_rate_of_change",
+    "temp_rolling_6h",
+    "temp_trend",
+    "humidity_trend",
+    "wind_trend",
+    "pressure_trend",
+    "low_wind_flag",
+    "high_humidity_flag",
+    "smog_risk_flag"
+  ],
+  "trained_at": "2026-05-29T13:09:21.906337",
+  "samples": 49248,
+  "metrics": {
+    "24h": {
+      "mae": 5.372129488646911,
+      "rmse": 8.123927442031563,
+      "mape": 409.5288379716657,
+      "r2": -0.3939995654855384,
+      "evs": -0.2804127312903706,
+      "model_type": "lightgbm"
+    },
+    "48h": {
+      "mae": 22.534986926773694,
+      "rmse": 32.86984317922567,
+      "mape": 1594.2107970337283,
+      "r2": -21.817091598226884,
+      "evs": -12.433254989828292,
+      "model_type": "xgboost"
+    },
+    "72h": {
+      "mae": 21.211716071777552,
+      "rmse": 32.32736309557433,
+      "mape": 1399.5508703824457,
+      "r2": -21.082281741941006,
+      "evs": -12.995267492742522,
+      "model_type": "xgboost"
+    }
+  }
+}
