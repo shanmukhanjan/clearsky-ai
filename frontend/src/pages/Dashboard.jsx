@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AQICard from '../components/AQICard';
 import AQIChart from '../components/AQIChart';
 import PollutantPanel from '../components/PollutantPanel';
-import SmogAlert from '../components/SmogAlert';
 import HealthCard from '../components/HealthCard';
 import AQIMap from '../components/AQIMap';
 import SearchAutocomplete from '../components/SearchAutocomplete';
