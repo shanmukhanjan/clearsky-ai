@@ -38,6 +38,7 @@ class PredictionRequest(BaseModel):
 
 @app.get("/")
 def read_root():
+    # Simple endpoint to check if the AI service is running
     return {
         "status": "active",
         "service": "ClearSky AI Prediction",
@@ -47,6 +48,7 @@ def read_root():
 
 @app.get("/health")
 def health_check():
+    # Health check used by deployment platforms like Render
     return {
         "status": "healthy",
         "model_loaded": predictor.model_loaded,
@@ -56,6 +58,8 @@ def health_check():
 
 @app.post("/predict")
 def predict_aqi(request: PredictionRequest):
+    # This endpoint receives current weather and pollution data,
+    # and asks the machine learning model to predict future AQI.
     try:
         cleaned_df = clean_data(request.features)
         features_dict = cleaned_df.iloc[0].to_dict()

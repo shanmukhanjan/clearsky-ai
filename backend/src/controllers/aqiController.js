@@ -9,7 +9,8 @@ const env = require('../config/env');
 
 /**
  * GET /api/aqi/:city/predict
- * Main AQI endpoint — fetches pollutants, weather, and AI prediction.
+ * This is the main function that gets called when a user searches for a city.
+ * It fetches the pollutants, gets the weather, and then asks our AI model to predict the future AQI.
  */
 async function getAQIPrediction(req, res, next) {
     try {
