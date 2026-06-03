@@ -56,7 +56,7 @@ async function getAQIPrediction(req, res, next) {
                     precipitation: 0,
                     uv_index: 0,
                 },
-            }, { timeout: 5000 });
+            }, { timeout: 10000 });
             aiPrediction = aiRes.data;
         } catch (aiErr) {
             console.warn(`AI service unavailable at ${env.AI_SERVICE_URL}, using local fallback:`, aiErr.message);
