@@ -9,8 +9,7 @@ const env = require('../config/env');
 
 /**
  * GET /api/aqi/:city/predict
- * This is the main function that gets called when a user searches for a city.
- * It fetches the pollutants, gets the weather, and then asks our AI model to predict the future AQI.
+ * Main AQI endpoint — fetches pollutants, weather, and AI prediction.
  */
 async function getAQIPrediction(req, res, next) {
     try {
@@ -56,7 +55,7 @@ async function getAQIPrediction(req, res, next) {
                     precipitation: 0,
                     uv_index: 0,
                 },
-            }, { timeout: 10000 });
+            }, { timeout: 5000 });
             aiPrediction = aiRes.data;
         } catch (aiErr) {
             console.warn(`AI service unavailable at ${env.AI_SERVICE_URL}, using local fallback:`, aiErr.message);

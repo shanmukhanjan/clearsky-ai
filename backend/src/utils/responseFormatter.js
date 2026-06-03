@@ -1,21 +1,20 @@
 const { calculateAQI } = require('./aqiCalculator');
-const { assessSmogRisk } = require('./smogRiskHelper');
-const { generateForecast } = require('./aqiPredictor');
-const { getHealthRecommendation } = require('./healthHelper');
+const { assessSmogRisk } = require('./smogRiskEngine');
+const { generateForecast } = require('./predictionEngine');
+const { getHealthRecommendation } = require('./healthRecommendationEngine');
 
 function formatAQIResponse(city, rawPollutants, weatherData, aiPrediction = null, coordinates = null) {
-    // Step 1: Calculate the overall Air Quality Index (AQI) based on raw pollutant data
+    // Step 1: Compute EPA AQI from actual pollutant concentrations
     const aqiResult = calculateAQI(rawPollutants);
 
     if (!aqiResult) {
         throw new Error('Unable to compute AQI from provided pollutant data.');
     }
 
-    // Step 2: Calculate the risk of smog using current weather conditions
+    // Step 2: Smog risk based on PM2.5, wind, humidity
     const { smogRisk, smogScore, smogFactors } = assessSmogRisk(rawPollutants, weatherData);
 
-    // Step 3: Determine the AQI prediction for the coming hours
-    // We use the AI prediction if available, otherwise we use our basic heuristic forecast
+    // Step 3: Use AI prediction if available, otherwise fall back to local engine
     let prediction;
     if (aiPrediction) {
         // Prevent unrealistic AQI spikes (stabilize forecast)
@@ -45,7 +44,6 @@ function formatAQIResponse(city, rawPollutants, weatherData, aiPrediction = null
             categories:  aiPrediction.categories || {},
         };
     } else {
-        // Basic prediction when AI model is not reachable
         const forecast = generateForecast(aqiResult.aqi, weatherData);
         prediction = {
             next6Hours:  forecast.next6Hours,
@@ -60,10 +58,10 @@ function formatAQIResponse(city, rawPollutants, weatherData, aiPrediction = null
         };
     }
 
-    // Step 4: Get simple health advice based on the calculated AQI category
+    // Step 4: Health guidance
     const health = getHealthRecommendation(aqiResult.category);
 
-    // Combine smog assessment data
+    // Use AI smog assessment if available, otherwise use local engine
     const smogData = aiPrediction ? {
         risk: aiPrediction.smogRisk || smogRisk,
         score: aiPrediction.smogScore ?? smogScore,
@@ -74,7 +72,6 @@ function formatAQIResponse(city, rawPollutants, weatherData, aiPrediction = null
         factors: smogFactors,
     };
 
-    // Step 5: Return the final formatted response object
     return {
         city,
         timestamp: new Date().toISOString(),

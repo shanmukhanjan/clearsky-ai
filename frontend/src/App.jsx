@@ -14,17 +14,10 @@ const LoadingFallback = () => (
 );
 
 function App() {
-    // These are React state variables to keep track of what the user is seeing.
-    // 'view' controls if we show the welcome page, dashboard, or compare view.
     const [view, setView] = useState('welcome');
-    
-    // 'city' stores the name of the city the user searched for.
     const [city, setCity] = useState(null);
-    
-    // 'isDarkMode' tracks if the user prefers dark or light theme.
     const [isDarkMode, setIsDarkMode] = useState(false);
 
-    // This useEffect runs once when the app loads to check the user's saved theme preference.
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -36,7 +29,6 @@ function App() {
         }
     }, []);
 
-    // Function to switch between light and dark modes
     const toggleTheme = () => {
         setIsDarkMode(!isDarkMode);
         if (!isDarkMode) {
@@ -48,7 +40,6 @@ function App() {
         }
     };
 
-    // Function to hide the welcome page and show the main dashboard
     const handleStart = () => {
         setView('dashboard');
     };
