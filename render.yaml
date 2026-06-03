@@ -1,5 +1,6 @@
 services:
   # AI Service (FastAPI)
+  # Deploys the Python backend responsible for AQI forecasting via XGBoost
   - type: web
     name: clearsky-ai-service
     runtime: python

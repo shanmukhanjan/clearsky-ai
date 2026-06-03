@@ -2,7 +2,7 @@
 
 ## 🌍 Project Overview
 
-ClearSky AI is an environmental monitoring application that allows users to check the current Air Quality Index (AQI) of any city in the world. It not only shows you current pollutant levels (like PM2.5 and PM10) but also provides a weather-aware AQI forecast using a machine learning model.
+ClearSky AI is an advanced, yet student-friendly, environmental monitoring application. It empowers users to monitor real-time Air Quality Index (AQI) globally, analyzing vital pollutants like PM2.5, PM10, and Ozone. Furthermore, it integrates live meteorological data to fuel a machine-learning model (XGBoost) that forecasts AQI trends for the next 72 hours, providing actionable health insights.
 
 ## 🎓 Why I Built This Project
 1. **Learn Full-Stack Web Development:** Understand how to connect a React frontend to an Express.js backend.
